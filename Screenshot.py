@@ -1,3 +1,4 @@
+from PIL import Image
 import numpy as np
 import win32con
 import win32gui
@@ -18,10 +19,10 @@ class Screenshot():
         """
         x1, y1, x2, y2 = bbox
         if x1 < 0 or y1 < 0 or x2 > img.shape[1] or y2 > img.shape[0]:
-            img, x1, x2, y1, y2 = pad_img_to_fit_bbox(img, x1, x2, y1, y2)
+            img, x1, x2, y1, y2 = self.__img_fit_bbox(img, x1, x2, y1, y2)
         return img[y1:y2, x1:x2, :]
 
-    def __pad_img_to_fit_bbox(self, img, x1, x2, y1, y2):
+    def __img_fit_bbox(self, img, x1, x2, y1, y2):
         """
          rtype: np.array
         """
@@ -60,8 +61,8 @@ class Screenshot():
         self.cDC.SelectObject(self.dataBitMap)
         self.cDC.BitBlt((0, 0), (w, h), dcObj, (0, 0), win32con.SRCCOPY)
 
-        signedIntsArray = self.dataBitMap.GetBitmapBits(True)
-        im = np.fromstring(signedIntsArray, dtype='uint8')
+        bmpstr = self.dataBitMap.GetBitmapBits(True)
+        im = np.fromstring(bmpstr, dtype='uint8')
         im.shape = (h, w, 4)
 
         dcObj.DeleteDC()
@@ -81,7 +82,7 @@ class Screenshot():
         h, w = im.shape[:2]
         bbox = (int(x1*w), int(y1*h), int(x2*w), int(y2*h))
 
-        return imcrop(im, bbox)
+        return self.__imcrop(im, bbox)
 
     def free(self):
         try:
@@ -92,4 +93,10 @@ class Screenshot():
 
     def save(self, fn):
         if (self.cDC and self.dataBitMap):
-            self.dataBitMap.SaveBitmapFile(self.cDC, fn)
+            bmpinfo = self.dataBitMap.GetInfo()
+            bmpstr = self.dataBitMap.GetBitmapBits(True)
+            im = Image.frombuffer(
+                'RGB',
+                (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+                bmpstr, 'raw', 'BGRX', 0, 1)
+            im.save(fn)
