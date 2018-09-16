@@ -27,13 +27,15 @@
 </label>
 <button id='start'>start</button>
 <script type="text/javascript">
-	let startToggle = true;
-
+	const ipc = require('electron').ipcRenderer;
 	const net = require('net');
 	const config = require('../../config');
 	const client = net.createConnection({ port: config.port }, () => {
 		console.log('connected to server!');
 	});
+	let startToggle = true;
+
+	ipc.send('ready');
 	
 	client.on('data', (data) => {
 		data = JSON.parse(data)
@@ -51,9 +53,9 @@
 			}
 			write.apply(this, arguments)
 		}
-	})(client.write)
+	})(client.write);
 
-	document.getElementById('start').onclick = e => {
+	function start(e){
 		if (startToggle){
 			startToggle = false;
 			e.target.disabled = true;
@@ -64,9 +66,18 @@
 		}
 	};
 
+	document.getElementById('start').onclick = start;
+
 	client.on('end', () => {
 		console.log('disconnected from server');
 	});
+
+    ipc.on('start', () => {
+    	let e = {
+    		target: document.getElementById('start')
+    	}
+    	start(e);
+    });
 </script>
 </body>
 </html>
