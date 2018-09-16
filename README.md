@@ -18,4 +18,4 @@ Tool to assist in taking frame-by-frame screenshots from Guilty Gear Xrd
 
 - I was thinking I could use computer vision to check if this HUD element has changed by either using OCR for checking if the numbers that the HUD displays has changed or just checking if the entire HUD element has changed.
 
-- I opted for the latter because for this purpose, it will work indefinitely. This is due to the fact that I can use Cheat Engine to isolate this HUD element so that it will not be on top of anything that animates. In other words, the only time a change is detected in this region would be if the HUD element updates itself.
+- I opted for the latter because for this purpose, it will work indefinitely. This is due to the fact that I can use Cheat Engine to isolate this HUD element so that it will not be on top of anything that animates, as well as being able to choose a stage that contains nothing and is only characterized by a black background. In other words, the only time a change is detected in this region would be if the HUD element updates itself.
