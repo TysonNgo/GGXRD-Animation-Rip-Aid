@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>GGXRD-Animation-Rip-Aid</title>
+	<style type="text/css">
+		input{
+			display: block;
+		}
+		* {
+			font-size: 1em;
+			font-family: sans-serif;
+		}
+		label {
+			font-size: 1.2em;
+		}
+		input, button {
+			width: 100%;
+			margin: 0.2em 0;
+			padding: 0.1em;
+			box-sizing: border-box;
+		}
+	</style>
+</head>
+<body>
+<label>Character
+	<input type=text id="character">
+</label>
+<button id='start'>start</button>
+<script type="text/javascript">
+	let startToggle = true;
+
+	const net = require('net');
+	const config = require('../../config');
+	const client = net.createConnection({ port: config.port }, () => {
+		console.log('connected to server!');
+	});
+	
+	client.on('data', (data) => {
+		data = JSON.parse(data)
+		console.log(data);
+		if (data.event === 'stop'){
+			startToggle = true;
+			document.getElementById('start').disabled = false;
+		}
+	});
+
+	client.write = (function(write){
+		return function (data){
+			if (typeof data === 'object'){
+				data = JSON.stringify(data);
+			}
+			write.apply(this, arguments)
+		}
+	})(client.write)
+
+	document.getElementById('start').onclick = e => {
+		if (startToggle){
+			startToggle = false;
+			e.target.disabled = true;
+			client.write({
+				event: 'start',
+				character: document.getElementById('character').value
+			})
+		}
+	};
+
+	client.on('end', () => {
+		console.log('disconnected from server');
+	});
+</script>
+</body>
+</html>

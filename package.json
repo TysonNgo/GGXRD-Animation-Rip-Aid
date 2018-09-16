@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "start": "electron ./src/gui"
+  },
+  "dependencies": {
+    "electron": "^2.0.9"
+  }
+}
