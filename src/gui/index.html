@@ -45,6 +45,9 @@
 		    text-overflow: ellipsis;
 		    white-space: nowrap;
 		}
+		table td:not(:first-child){
+			width: 30px;
+		}
 		table button{
 			padding: 0;
 			margin: 0;
@@ -67,7 +70,7 @@
 		}
 		.screenshot-crops-container{
 			width: 100%;
-			height: 100px;
+			height: 90px;
 			border: 1px solid #a9a9a9;
 			overflow-y: scroll;
 		}
@@ -91,6 +94,15 @@
 			text-align: center;
 			display: block;
 		}
+		.screenshot-crop-button{
+			display: flex;
+			flex-direction: row;
+		}
+		.screenshot-crop-buttons button{
+			width: 20%;
+			height: 25px;
+			vertical-align: top;
+		}
 		#add-crop-button{
 			height: 21px;
 			width: 30px;
@@ -110,8 +122,6 @@
 		<table id="screenshot-crops">
 			<tr>
 				<th>Move</th>
-				<th>Start</th>
-				<th>End</th>
 				<th></th>
 			</tr>
 		</table>
@@ -119,6 +129,13 @@
 	</div>
 	<div class="divide"></div>
 	<div id="screenshot-carousel"></div>
+	<div class="screenshot-crop-buttons">
+		<button title="previous frame">🡰</button><button id="start-frame" title="start frame">
+		▶</button><button title="crop box">
+		▢</button><button id="end-frame" title="end frame">
+		🏁</button><button title="next frame">
+		🡲</button>
+	</div>
 </div>
 <div id="preview">
 </div>
@@ -140,11 +157,12 @@
 			this.preview = document.getElementById('preview');
 			this.cropList = [];
 			this.createCropList();
+			this.activeCropItem = null;
 		}
 		createCropList(){
 			let moves = [
 				// normals
-				'2363214P','5P', '5K', 'c.S', 'f.S', '5H', '5D',
+				'5P', '5K', 'c.S', 'f.S', '5H', '5D',
 				'6P', '6K', '6S', '6H', '6D',
 				'2P', '2K', '2S', '2H', '2D',
 				'j.P', 'j.K', 'j.S', 'j.H', 'j.D'
@@ -188,15 +206,6 @@
 			let move = document.createElement('td');
 			move.title = name;
 			move.innerText = name;
-			let start = document.createElement('td');
-			let startButton = document.createElement('button');
-			startButton.innerText = '▶';
-			start.appendChild(startButton);
-
-			let end = document.createElement('td');
-			let endButton = document.createElement('button');
-			endButton.innerText = '🏁';
-			end.appendChild(endButton);
 
 			let remove = document.createElement('td');
 			let removeButton = document.createElement('button');
@@ -204,12 +213,10 @@
 			remove.appendChild(removeButton);
 
 			tr.appendChild(move);
-			tr.appendChild(start);
-			tr.appendChild(end);
 			tr.appendChild(remove);
 
 			this.crops.appendChild(tr);
-			return {
+			let cropItem = {
 				name: name,
 				x1: x1 || null,
 				y1: y1 || null,
@@ -218,6 +225,40 @@
 				frameStart: null,
 				frameEnd: null,
 				element: tr
+			};
+
+			removeButton.onclick = () => {
+				console.log(this.activeCropItem)
+				// TODO
+				// change this.cropList to a linked list
+				cropItem.element.remove();
+			};
+			move.onclick = () => {
+				for (let i = 0; i < this.cropList.length; i++){
+					this.cropList[i].element.style.background = 'none';
+				}
+				cropItem.element.style.background = '#c9c9c9';
+				this.activeCropItem = cropItem;
+			}
+
+			return cropItem;
+		}
+		setStart(){
+			let cropItem = this.activeCropItem;
+			if (cropItem === null || !this.preview.style.backgroundImage) return;
+			let start = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
+			cropItem.frameStart = start;
+			if (cropItem.frameEnd < start){
+				cropItem.frameEnd = start
+			}
+		}
+		setEnd(){
+			let cropItem = this.activeCropItem;
+			if (cropItem === null || !this.preview.style.backgroundImage) return;
+			let end = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
+			cropItem.frameEnd = end;
+			if (cropItem.frameStart > end){
+				cropItem.frameStart = end
 			}
 		}
 		setPreview(img){
@@ -297,6 +338,8 @@
 	};
 	document.getElementById('screenshot-carousel').onwheel = horizontalScroll;
 	document.getElementById('start').onclick = start;
+	document.getElementById('start-frame').onclick = () => AM.setStart();
+	document.getElementById('end-frame').onclick = () => AM.setEnd();
 
 	client.on('end', () => {
 		console.log('disconnected from server');
