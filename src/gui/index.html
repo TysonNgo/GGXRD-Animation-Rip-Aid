@@ -102,6 +102,7 @@
 			width: 20%;
 			height: 25px;
 			vertical-align: top;
+			line-height: 0.7em;
 		}
 		#add-crop-button{
 			height: 21px;
@@ -130,11 +131,11 @@
 	<div class="divide"></div>
 	<div id="screenshot-carousel"></div>
 	<div class="screenshot-crop-buttons">
-		<button title="previous frame">🡰</button><button id="start-frame" title="start frame">
-		▶</button><button title="crop box">
-		▢</button><button id="end-frame" title="end frame">
-		🏁</button><button title="next frame">
-		🡲</button>
+		<button id="first-frame" title="first frame to animate for the selected move">
+		first frame</button><button title="area to crop for the selected move">
+		crop</button><button id="last-frame" title="last frame to animate for the selected move">
+		last frame</button><button style="width: 40%" title="export all moves to GIFs">
+		export GIFs</button>
 	</div>
 </div>
 <div id="preview">
@@ -338,8 +339,8 @@
 	};
 	document.getElementById('screenshot-carousel').onwheel = horizontalScroll;
 	document.getElementById('start').onclick = start;
-	document.getElementById('start-frame').onclick = () => AM.setStart();
-	document.getElementById('end-frame').onclick = () => AM.setEnd();
+	document.getElementById('first-frame').onclick = () => AM.setStart();
+	document.getElementById('last-frame').onclick = () => AM.setEnd();
 
 	client.on('end', () => {
 		console.log('disconnected from server');
