@@ -12,9 +12,10 @@ let mainWindow;
 
 function createWindow () {
   mainWindow = new BrowserWindow({
-    width: 225,
-    height: 200,
-    alwaysOnTop: true
+    width: 768,
+    height: 337,
+    alwaysOnTop: true,
+    resizable: false
   })
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'))

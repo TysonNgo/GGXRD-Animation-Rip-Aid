@@ -84,6 +84,10 @@ class Screenshot():
 
         return self.__imcrop(im, bbox)
 
+    def get_info(self):
+        if self.dataBitMap:
+            return self.dataBitMap.GetInfo()
+
     def free(self):
         try:
             self.cDC.DeleteDC()

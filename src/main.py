@@ -21,7 +21,7 @@ def mkdirs(directory):
             raise
 
 
-def take_screenshots():
+def take_screenshots(conn):
     global window_title
     global ss_dir
     global char_dir
@@ -41,7 +41,15 @@ def take_screenshots():
                 break
 
         if is_different(ss.crop_action_hud(prev), curr_crop):
-            ss.save(os.path.join(outdir, str(i)+'.png'))
+            outfile = os.path.join(outdir, str(i)+'.png')
+            ss.save(outfile)
+            info = ss.get_info()
+            conn.send(json.dumps({
+                'event': 'new_file',
+                'file': os.path.abspath(outfile),
+                'width': info['bmWidth'],
+                'height': info['bmHeight']
+                }))
             i += 1
 
         prev = curr
@@ -72,7 +80,7 @@ def main():
                 if data['event'] == 'start':
                     print 'capturing screenshots'
                     char_dir = data['character']
-                    take_screenshots()
+                    take_screenshots(conn)
                     conn.send(json.dumps({'event': 'stop'}))
         except socket.error as err:
             if err[0] == 10054:

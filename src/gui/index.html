@@ -3,29 +3,125 @@
 <head>
 	<title>GGXRD-Animation-Rip-Aid</title>
 	<style type="text/css">
+		body, html{
+			padding: 0;
+			margin: 0;
+		}
+		.divide{
+			margin: 0.2em 0;
+			height: 2px;
+			width: 100%;
+			background: #cdcdcd;
+		}
 		input{
 			display: block;
 		}
 		* {
-			font-size: 1em;
 			font-family: sans-serif;
+			user-select: none;
 		}
 		label {
-			font-size: 1.2em;
+			font-size: 0.8em;
 		}
 		input, button {
 			width: 100%;
-			margin: 0.2em 0;
+			margin: 0.1em 0;
 			padding: 0.1em;
 			box-sizing: border-box;
+		}
+		button{
+			background-image: none;
+		}
+		table th{
+			font-size: 0.6em;
+		}
+		table tr:not(:first-child){
+			cursor: pointer;
+		}
+		table td{
+			font-size: 0.75em;
+		    max-width: 1em;
+		    overflow: hidden;
+		    text-overflow: ellipsis;
+		    white-space: nowrap;
+		}
+		table button{
+			padding: 0;
+			margin: 0;
+		}
+		#screenshot-ui{
+			z-index: -1;
+			padding: 1em;
+			width: 217px;
+			height: 254px;
+			border: 1px solid #555;
+		}
+		#preview{
+			position: absolute;
+			top: 0;
+			right: 0;
+			width: 512px;
+			height: 288px;
+			background-color: black;
+			background-size: cover;
+		}
+		.screenshot-crops-container{
+			width: 100%;
+			height: 100px;
+			border: 1px solid #a9a9a9;
+			overflow-y: scroll;
+		}
+		#screenshot-crops{
+			width: 100%;
+		}
+		#screenshot-carousel{
+			font-size: 0.6em;
+			width: 100%;
+			height: 57px;
+			border: 1px solid #a9a9a9;
+			white-space: nowrap;
+			overflow-x: auto;
+		}
+		#screenshot-carousel .img{
+			display: inline-block;
+		}
+		#screenshot-carousel .img:after{
+			content: attr(data-number);
+			color: white;
+			text-align: center;
+			display: block;
+		}
+		#add-crop-button{
+			height: 21px;
+			width: 30px;
+			float: right;
+			margin-right: 3px;
 		}
 	</style>
 </head>
 <body>
-<label>Character
-	<input type=text id="character">
-</label>
-<button id='start'>start</button>
+<div id="screenshot-ui">
+	<label>Character
+		<input type=text id="character">
+	</label>
+	<button id='start'>rapid screenshot 📷</button>
+	<div class="divide"></div>
+	<div class="screenshot-crops-container">
+		<table id="screenshot-crops">
+			<tr>
+				<th>Move</th>
+				<th>Start</th>
+				<th>End</th>
+				<th></th>
+			</tr>
+		</table>
+		<button id="add-crop-button">&#65291;</button>
+	</div>
+	<div class="divide"></div>
+	<div id="screenshot-carousel"></div>
+</div>
+<div id="preview">
+</div>
 <script type="text/javascript">
 	const ipc = require('electron').ipcRenderer;
 	const net = require('net');
@@ -36,13 +132,141 @@
 	let startToggle = true;
 
 	ipc.send('ready');
+
+	class AnimationManager{
+		constructor(){
+			this.crops = document.getElementById('screenshot-crops');
+			this.carousel = document.getElementById('screenshot-carousel');
+			this.preview = document.getElementById('preview');
+			this.cropList = [];
+			this.createCropList();
+		}
+		createCropList(){
+			let moves = [
+				// normals
+				'2363214P','5P', '5K', 'c.S', 'f.S', '5H', '5D',
+				'6P', '6K', '6S', '6H', '6D',
+				'2P', '2K', '2S', '2H', '2D',
+				'j.P', 'j.K', 'j.S', 'j.H', 'j.D'
+			]
+			/*
+			moves.appendMoves = (function(arr){
+				return (motion) => {
+					arr.push(...[
+						motion+'P',
+						motion+'K',
+						motion+'S',
+						motion+'H',
+						motion+'D',
+					]);
+				}
+			})(moves);
+			moves.appendMoves('252');
+			moves.appendMoves('[2]8');
+			moves.appendMoves('[4]6');
+			moves.appendMoves('236');
+			moves.appendMoves('214');
+			moves.appendMoves('623');
+			moves.appendMoves('421');
+			moves.appendMoves('41236');
+			moves.appendMoves('412364');
+			moves.appendMoves('63214');
+			moves.appendMoves('632146');
+			moves.appendMoves('2363214');
+			moves.appendMoves('2141236');
+			moves.appendMoves('236236');
+			moves.appendMoves('214214');
+			*/
+
+			for (let i = 0; i < moves.length; i++){
+				let cropItem = this.createCropItem(moves[i]);
+				this.cropList.push(cropItem);
+			}
+		}
+		createCropItem(name, x1, y1, x2, y2){
+			let tr = document.createElement('tr');
+			let move = document.createElement('td');
+			move.title = name;
+			move.innerText = name;
+			let start = document.createElement('td');
+			let startButton = document.createElement('button');
+			startButton.innerText = '▶';
+			start.appendChild(startButton);
+
+			let end = document.createElement('td');
+			let endButton = document.createElement('button');
+			endButton.innerText = '🏁';
+			end.appendChild(endButton);
+
+			let remove = document.createElement('td');
+			let removeButton = document.createElement('button');
+			removeButton.innerText = '🗙';
+			remove.appendChild(removeButton);
+
+			tr.appendChild(move);
+			tr.appendChild(start);
+			tr.appendChild(end);
+			tr.appendChild(remove);
+
+			this.crops.appendChild(tr);
+			return {
+				name: name,
+				x1: x1 || null,
+				y1: y1 || null,
+				x2: x2 || null,
+				y2: y2 || null,
+				frameStart: null,
+				frameEnd: null,
+				element: tr
+			}
+		}
+		setPreview(img){
+			let file = img.style.backgroundImage;
+			this.preview.style.backgroundImage = file;
+		}
+		appendImage(data){
+			let img = document.createElement('div');
+
+			img.dataset.number = /(\d+\.png)$/i.exec(data.file)[1];
+			img.className = 'img';
+			img.style.backgroundSize = 'cover';
+			img.style.width = data.width * 0.05 + 'px';
+			img.style.height = data.height * 0.05 + 'px';
+
+			data.file = `url('${data.file.replace(/\\/g, '/')}')`;
+			img.style.backgroundColor = 'black';
+			img.style.backgroundImage = data.file;
+			img.onwheel = e => {
+				e = {
+					deltaY: e.deltaY,
+					target: this.carousel,
+					preventDefault: () => {}
+				}
+				horizontalScroll(e);
+			};
+			img.style.cursor = 'pointer';
+			img.onclick = e => {
+				this.setPreview(e.target);
+			};
+
+			this.setPreview(img);
+			this.carousel.appendChild(img);
+			this.carousel.scrollTo(
+				this.carousel.scrollWidth - this.carousel.clientWidth, 0);
+		}
+		clearCarousel(){
+			this.carousel.innerHTML = '';
+		}
+	}
+	let AM = new AnimationManager();
 	
 	client.on('data', (data) => {
-		data = JSON.parse(data)
-		console.log(data);
+		data = JSON.parse(data);
 		if (data.event === 'stop'){
 			startToggle = true;
 			document.getElementById('start').disabled = false;
+		} else if (data.event === 'new_file'){
+			AM.appendImage(data);
 		}
 	});
 
@@ -56,6 +280,7 @@
 	})(client.write);
 
 	function start(e){
+		AM.clearCarousel();
 		if (startToggle){
 			startToggle = false;
 			e.target.disabled = true;
@@ -66,6 +291,11 @@
 		}
 	};
 
+	function horizontalScroll(e){
+		e.target.scrollLeft += e.deltaY;
+		e.preventDefault();
+	};
+	document.getElementById('screenshot-carousel').onwheel = horizontalScroll;
 	document.getElementById('start').onclick = start;
 
 	client.on('end', () => {
