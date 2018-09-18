@@ -8,6 +8,11 @@ const subprocess = spawn('python', ['src/main.py'], {
   //stdio: 'ignore'
 });
 
+subprocess.on('error', e => {
+  console.log(e);
+  process.exit(1);
+})
+
 let mainWindow;
 
 function createWindow () {
@@ -45,8 +50,4 @@ app.on('activate', function () {
 
 ipcMain.on('ready', e => {
   appChannel = e;
-})
-
-ipcMain.on('exit', e => {
-  process.exit(1);
 })
