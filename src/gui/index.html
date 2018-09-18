@@ -2,134 +2,34 @@
 <html>
 <head>
 	<title>GGXRD-Animation-Rip-Aid</title>
-	<style type="text/css">
-		body, html{
-			padding: 0;
-			margin: 0;
-		}
-		.divide{
-			margin: 0.2em 0;
-			height: 2px;
-			width: 100%;
-			background: #cdcdcd;
-		}
-		input{
-			display: block;
-		}
-		* {
-			font-family: sans-serif;
-			user-select: none;
-		}
-		label {
-			font-size: 0.8em;
-		}
-		input, button {
-			width: 100%;
-			margin: 0.1em 0;
-			padding: 0.1em;
-			box-sizing: border-box;
-		}
-		button{
-			background-image: none;
-		}
-		table th{
-			font-size: 0.6em;
-		}
-		table tr:not(:first-child){
-			cursor: pointer;
-		}
-		table td{
-			font-size: 0.75em;
-		    max-width: 1em;
-		    overflow: hidden;
-		    text-overflow: ellipsis;
-		    white-space: nowrap;
-		}
-		table td:not(:first-child){
-			width: 30px;
-		}
-		table button{
-			padding: 0;
-			margin: 0;
-		}
-		#screenshot-ui{
-			z-index: -1;
-			padding: 1em;
-			width: 217px;
-			height: 254px;
-			border: 1px solid #555;
-		}
-		#preview{
-			position: absolute;
-			top: 0;
-			right: 0;
-			width: 512px;
-			height: 288px;
-			background-color: black;
-			background-size: cover;
-		}
-		.screenshot-crops-container{
-			width: 100%;
-			height: 90px;
-			border: 1px solid #a9a9a9;
-			overflow-y: scroll;
-		}
-		#screenshot-crops{
-			width: 100%;
-		}
-		#screenshot-carousel{
-			font-size: 0.6em;
-			width: 100%;
-			height: 57px;
-			border: 1px solid #a9a9a9;
-			white-space: nowrap;
-			overflow-x: auto;
-		}
-		#screenshot-carousel .img{
-			display: inline-block;
-			background-color: #ddd;
-			opacity: 0.6;
-		}
-		#screenshot-carousel .img.carousel-img-active{
-			opacity: 1;
-		}
-		#screenshot-carousel .img:after{
-			content: attr(data-number);
-			color: white;
-			text-align: center;
-			display: block;
-		}
-		.screenshot-crop-button{
-			display: flex;
-			flex-direction: row;
-		}
-		.screenshot-crop-buttons button{
-			width: 20%;
-			height: 25px;
-			vertical-align: top;
-			line-height: 0.7em;
-		}
-		#add-crop-button{
-			height: 21px;
-			width: 30px;
-			float: right;
-			margin-right: 3px;
-		}
-		#crop-box{
-			position:fixed;
-			z-index: 1;
-			outline: 4px solid red;
-		}
-		.frame-capture:after{
-			content: '';
-			background: green;
-			height: 100%;
-			width: 100%;
-			opacity: 0.5;
-		}
-	</style>
+	<link rel="stylesheet" type="text/css" href="index.css">
 </head>
 <body>
+<div id="menu" style="display: none">
+	<div class="stick-direction-container">
+		<div class="stick-direction" id="dir1"></div>
+		<div class="stick-direction" id="dir2"></div>
+		<div class="stick-direction" id="dir3"></div>
+		<div class="stick-direction" id="dir4"></div>
+		<div class="stick-direction" id="dir5"></div>
+		<div class="stick-direction" id="dir6"></div>
+		<div class="stick-direction" id="dir7"></div>
+		<div class="stick-direction" id="dir8"></div>
+		<div class="stick-direction" id="dir9"></div>
+		<div id="stick-ball"></div>
+	</div>
+	<div class="stick-button-container">
+		<div class="stick-button" id="P"></div>
+		<div class="stick-button" id="K"></div>
+		<div class="stick-button" id="S"></div>
+		<div class="stick-button" id="H"></div>
+		<div class="stick-button" id="D"></div>
+	</div>
+	<input type="text" id="move" placeholder="Move">
+	<div id="close-modal">🗙</div>
+	<div id="add-move">&#65291;</div>
+</div>
+<div id="modal" style="display:none"></div>
 <div id="crop-box" style="display: none"></div>
 <div id="screenshot-ui">
 	<label>Character
@@ -167,6 +67,9 @@
 	let startToggle = true;
 
 	ipc.send('ready');
+
+	const loop = require('./utils/loop');
+	loop.loop();
 
 	HTMLElement.prototype.toggleClass = function (classname){
 		if (this.hasClass(classname)){
@@ -411,8 +314,7 @@
 			*/
 
 			for (let i = 0; i < moves.length; i++){
-				let cropItem = this.createCropItem(moves[i]);
-				this.cropList.push(cropItem);
+				this.createCropItem(moves[i]);
 			}
 			this.cropList.activeCropItem = this.cropList.first;
 		}
@@ -444,6 +346,7 @@
 				this.cropList.activeCropItem = cropItem;
 			}
 
+			this.cropList.push(cropItem);
 			return cropItem;
 		}
 		setStart(){
@@ -635,6 +538,55 @@
 	document.getElementById('crop').onclick = cropSelect;
 	document.getElementById('last-frame').onclick = () => AM.setEnd();
 	document.getElementById('export-gifs').onclick = () => AM.cropList.export(client);
+	document.getElementById('add-crop-button').onclick = () => {
+		document.getElementById('modal').style.display = 'block';
+		document.getElementById('menu').style.display = 'block';
+	};
+	document.getElementById('add-move').onclick = () => {
+		let move = document.getElementById('move').value;
+		if (move){
+			AM.cropList.activeCropItem = AM.createCropItem(move);
+		}
+	};
+	document.getElementById('close-modal').onclick = () => {
+		document.getElementById('modal').style.display = 'none';
+		document.getElementById('menu').style.display = 'none';
+	};
+	addEventListener('controllerInput', e => {
+		if (document.activeElement === document.getElementById('move')) return;
+		let stick = document.getElementById('stick-ball');
+		let inputFlags = e.detail;
+		let dir = 0;
+		dir = (dir << 1) + inputFlags.up;
+		dir = (dir << 1) + inputFlags.down;
+		dir = (dir << 1) + inputFlags.left;
+		dir = (dir << 1) + inputFlags.right;
+		switch (dir){
+			case 0b0110: stick.style.top = '54px'; stick.style.left = '-6px'; break; // 1
+			case 0b0100: stick.style.top = '54px'; stick.style.left = ''; break; // 2
+			case 0b0101: stick.style.top = '54px'; stick.style.left = '54px'; break; // 3
+			case 0b0010: stick.style.top = '24px'; stick.style.left = '-6px'; break; // 4
+			case 0b0000: stick.style.top = '24px'; stick.style.left = '24px'; break; // 5
+			case 0b0001: stick.style.top = '24px'; stick.style.left = '54px'; break; // 6
+			case 0b1010: stick.style.top = '-6px'; stick.style.left = '-6px'; break; // 7
+			case 0b1000: stick.style.top = '-6px'; stick.style.left = '24px'; console.log(1); break; // 8
+			case 0b1001: stick.style.top = '-6px'; stick.style.left = '54px'; break; // 9
+		}
+		for (let input in inputFlags){
+			if (input.length === 1){
+				let PKSHD = document.getElementById(input);
+				if (inputFlags[input]){
+					PKSHD.addClass('active')
+				} else {
+					PKSHD.removeClass('active')
+				}		
+			}
+		}
+	})
+	addEventListener('controllerMotion', e => {
+		if (document.activeElement === document.getElementById('move')) return;
+		document.getElementById('move').value = e.detail;
+	})
 
 	// keyboard shortcuts
 	let frameSetHeld = false;
@@ -672,6 +624,17 @@
 				break;
 			case 32: // SPACE
 				cropSelect();
+				break;
+			case 27: // ESC
+				if (document.getElementById('modal').style.display === 'block'){
+					document.getElementById('modal').style.display = 'none';
+					document.getElementById('menu').style.display = 'none';
+				}
+				break;
+			case 13: // ENTER
+				if (document.getElementById('modal').style.display === 'block'){
+					document.getElementById('add-move').click();
+				}
 				break;
 			//e.preventDefault();
 		}

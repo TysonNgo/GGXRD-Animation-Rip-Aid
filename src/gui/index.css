@@ -1,0 +1,258 @@
+body, html{
+	padding: 0;
+	margin: 0;
+}
+.divide{
+	margin: 0.2em 0;
+	height: 2px;
+	width: 100%;
+	background: #cdcdcd;
+}
+input{
+	display: block;
+}
+* {
+	font-family: sans-serif;
+	user-select: none;
+}
+label {
+	font-size: 0.8em;
+}
+input, button {
+	width: 100%;
+	margin: 0.1em 0;
+	padding: 0.1em;
+	box-sizing: border-box;
+}
+button{
+	background-image: none;
+}
+table th{
+	font-size: 0.6em;
+}
+table tr:not(:first-child){
+	cursor: pointer;
+}
+table td{
+	font-size: 0.75em;
+    max-width: 1em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+table td:not(:first-child){
+	width: 30px;
+}
+table button{
+	padding: 0;
+	margin: 0;
+}
+#screenshot-ui{
+	z-index: -1;
+	padding: 1em;
+	width: 217px;
+	height: 254px;
+	border: 1px solid #555;
+}
+#preview{
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 512px;
+	height: 288px;
+	background-color: black;
+	background-size: cover;
+}
+.screenshot-crops-container{
+	width: 100%;
+	height: 90px;
+	border: 1px solid #a9a9a9;
+	overflow-y: scroll;
+}
+#screenshot-crops{
+	width: 100%;
+}
+#screenshot-carousel{
+	font-size: 0.6em;
+	width: 100%;
+	height: 57px;
+	border: 1px solid #a9a9a9;
+	white-space: nowrap;
+	overflow-x: auto;
+}
+#screenshot-carousel .img{
+	display: inline-block;
+	background-color: #ddd;
+	opacity: 0.6;
+}
+#screenshot-carousel .img.carousel-img-active{
+	opacity: 1;
+}
+#screenshot-carousel .img:after{
+	content: attr(data-number);
+	color: white;
+	text-align: center;
+	display: block;
+}
+.screenshot-crop-button{
+	display: flex;
+	flex-direction: row;
+}
+.screenshot-crop-buttons button{
+	width: 20%;
+	height: 25px;
+	vertical-align: top;
+	line-height: 0.7em;
+}
+#add-crop-button{
+	height: 21px;
+	width: 30px;
+	float: right;
+	margin-right: 3px;
+}
+#crop-box{
+	position:fixed;
+	z-index: 1;
+	outline: 4px solid red;
+}
+.frame-capture:after{
+	content: '';
+	background: green;
+	height: 100%;
+	width: 100%;
+	opacity: 0.5;
+}
+#modal{
+	position: fixed;
+	top: 0;
+	left: 0;
+	background: #000;
+	width: 100%;
+	height: 100%;
+	z-index: 10;
+	opacity: 0.65;
+}
+#menu{
+	position: fixed;
+	top: 20%;
+	left: 25%;
+	width: 50%;
+	height: 60%;
+	background: #fff;
+	z-index: 11;
+}
+.stick-direction-container{
+	position: absolute;
+	top: 31px;
+	left: 32px;
+}
+.stick-button-container{
+	position: absolute;
+	top: 25px;
+	left: 130px;
+}
+#stick-ball{
+	position: absolute;
+	border-radius: 50%;
+	background: #f00;
+	width: 25px;
+	height: 25px;
+	top: 24px;
+	left: 24px;
+	transition: top 0.1s ease 0s, left 0.1s ease 0s;
+}
+.stick-direction{
+	border-radius: 50%;
+	width: 12px;
+	height: 12px;
+	background: #888;
+	position: absolute;
+}
+.stick-direction#dir1{top: 60px;}
+.stick-direction#dir2{top: 60px; left: 30px;}
+.stick-direction#dir3{top: 60px; left: 60px;}
+.stick-direction#dir4{top: 30px;}
+.stick-direction#dir5{
+	width: 6px; height: 6px; top: 33px; left: 33px;}
+.stick-direction#dir6{top: 30px; left: 60px;}
+.stick-direction#dir7{top: 0;}
+.stick-direction#dir8{top: 0; left: 30px;}
+.stick-direction#dir9{top: 0; left: 60px;}
+.stick-button{
+	position: relative;
+	border-radius: 50%;
+	width: 25px;
+	height: 25px;
+	color: #fff;
+	opacity: 0.45;
+}
+.stick-button{
+	position: absolute;
+}
+.stick-button#P{
+	top: 57px; }
+.stick-button#K{
+	left: 21px;
+	top: 33px; }
+.stick-button#S{
+	left: 47px;
+	top: 14px; }
+.stick-button#H{
+	left: 78px;
+	top: 4px; }
+.stick-button#D{
+	left: 123px;
+	top: 18px; }
+.stick-button:after{
+	content: '';
+	line-height: 1.8em;
+	text-shadow: 1px 1px 2px #000;
+	box-shadow: 1px 1px 2px #000;
+	display: block;
+	border-radius: 50%;
+	text-align: center;
+	height: 100%;
+	width: 100%;
+}
+.stick-button#P{background: #ec79de;}
+.stick-button#K{background: #18aaf7;}
+.stick-button#S{background: #24f381;}
+.stick-button#H{background: #f00;}
+.stick-button#D{background: #ff9b23;}
+.stick-button#P:after{content: 'P';}
+.stick-button#K:after{content: 'K';}
+.stick-button#S:after{content: 'S';}
+.stick-button#H:after{content: 'H';}
+.stick-button#D:after{content: 'D';}
+.stick-button.active{
+	opacity: 1;
+}
+#menu{
+	color: #444;
+}
+#move{
+	position: absolute;
+	left: 10px;
+	top: 115px;
+	width: 9em;
+	font-size: 2em;
+}
+#close-modal, #add-move{
+	position: absolute;
+	border: 1px solid #a9a9a9;
+	text-align: center;
+	cursor: pointer;
+}
+#close-modal{
+	top: 10px;
+	right: 10px;
+	width: 1.5em;
+	height: 1.6em;
+}
+#add-move{
+	top: 118px;
+	left: 304px;
+	width: 65px;
+	height: 45px;
+	line-height: 2.8em;
+}
