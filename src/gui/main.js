@@ -1,25 +1,12 @@
-
-	const ipc = require('electron').ipcRenderer;
-	const net = require('net');
-	const config = require('../../config');
-	const client = net.createConnection({ port: config.port }, () => {
-		console.log('connected to server!');
-	});
-	client.write = (function(write){
-		return function (data){
-			if (typeof data === 'object'){
-				data = JSON.stringify(data);
-			}
-			write.apply(this, arguments)
-		}
-	})(client.write);
+const ipc = require('electron').ipcRenderer;
+const loop = require('./utils/loop');
+const net = require('net');
+const config = require('../../config');
+const client = net.createConnection({ port: config.port }, () => {
+	console.log('connected to server!');
+	loop.loop();
 
 	let startToggle = true;
-
-	ipc.send('ready');
-
-	const loop = require('./utils/loop');
-	loop.loop();
 
 	HTMLElement.prototype.toggleClass = function (classname){
 		if (this.hasClass(classname)){
@@ -603,35 +590,49 @@
 		}
 	}
 
-	client.on('end', () => {
-		console.log('disconnected from server');
-	});
-
-	client.on('data', (data) => {
-		data = JSON.parse(data);
-		if (data.event === 'stop'){
-			startToggle = true;
-			document.getElementById('start').disabled = false;
-		} else if (data.event === 'new_file'){
-			AM.appendImage(data);
-		} else if (data.event === 'export_progress'){
-			let progress = document.getElementById('progress');
-			progress.dataset.progress = data.message;
-			progress.style.width = (data.progress/data.complete*522) + 'px';
-			if (data.progress >= data.complete){
-				progress.style.display = 'none';
-				document.getElementById('modal').style.display = 'none';
-				progress.dataset.progress = '';
-				progress.style.width = 0;
-			}
-		}
-	});
-
-    ipc.on('start', () => {
-    	let e = {
-    		target: document.getElementById('start')
-    	}
-    	start(e);
-    });
-
     document.getElementById('character').focus();
+
+
+});
+client.write = (function(write){
+	return function (data){
+		if (typeof data === 'object'){
+			data = JSON.stringify(data);
+		}
+		write.apply(this, arguments)
+	}
+})(client.write);
+
+ipc.send('ready');
+
+client.on('end', () => {
+	console.log('disconnected from server');
+	ipc.send('exit');
+});
+
+client.on('data', (data) => {
+	data = JSON.parse(data);
+	if (data.event === 'stop'){
+		startToggle = true;
+		document.getElementById('start').disabled = false;
+	} else if (data.event === 'new_file'){
+		AM.appendImage(data);
+	} else if (data.event === 'export_progress'){
+		let progress = document.getElementById('progress');
+		progress.dataset.progress = data.message;
+		progress.style.width = (data.progress/data.complete*522) + 'px';
+		if (data.progress >= data.complete){
+			progress.style.display = 'none';
+			document.getElementById('modal').style.display = 'none';
+			progress.dataset.progress = '';
+			progress.style.width = 0;
+		}
+	}
+});
+
+ipc.on('start', () => {
+	let e = {
+		target: document.getElementById('start')
+	}
+	start(e);
+});

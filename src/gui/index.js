@@ -43,6 +43,10 @@ app.on('activate', function () {
   }
 })
 
-ipcMain.on('ready', e =>{
+ipcMain.on('ready', e => {
   appChannel = e;
+})
+
+ipcMain.on('exit', e => {
+  process.exit(1);
 })
