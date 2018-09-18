@@ -256,3 +256,26 @@ table button{
 	height: 45px;
 	line-height: 2.8em;
 }
+#progress, #progress:before, #progress:after{
+    position: fixed;
+    top: 125px;
+    left: 16%;
+    height: 23px;
+    z-index: 11;
+}
+#progress:after{
+	content: attr(data-progress);
+	color: #fff;
+	top: 107px;
+	width: 522px;
+	text-align: center;
+}
+#progress:before{
+	content: '';
+    border: 2px solid white;
+    width: 522px;
+}
+#progress{
+	background: rgba(0, 255, 0, 0.8);
+	height: 25px;
+}

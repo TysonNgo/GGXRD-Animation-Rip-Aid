@@ -5,6 +5,15 @@
 	const client = net.createConnection({ port: config.port }, () => {
 		console.log('connected to server!');
 	});
+	client.write = (function(write){
+		return function (data){
+			if (typeof data === 'object'){
+				data = JSON.stringify(data);
+			}
+			write.apply(this, arguments)
+		}
+	})(client.write);
+
 	let startToggle = true;
 
 	ipc.send('ready');
@@ -185,6 +194,8 @@
 				}
 				ci = ci.next;
 			}
+			document.getElementById('modal').style.display = 'block';
+			document.getElementById('progress').style.display = 'block';
 			client.write(payload);
 		}
 		remove(cropItem){
@@ -388,25 +399,6 @@
 		}
 	}
 	let AM = new AnimationManager();
-	
-	client.on('data', (data) => {
-		data = JSON.parse(data);
-		if (data.event === 'stop'){
-			startToggle = true;
-			document.getElementById('start').disabled = false;
-		} else if (data.event === 'new_file'){
-			AM.appendImage(data);
-		}
-	});
-
-	client.write = (function(write){
-		return function (data){
-			if (typeof data === 'object'){
-				data = JSON.stringify(data);
-			}
-			write.apply(this, arguments)
-		}
-	})(client.write);
 
 	function start(e){
 		if (startToggle){
@@ -613,6 +605,25 @@
 
 	client.on('end', () => {
 		console.log('disconnected from server');
+	});
+
+	client.on('data', (data) => {
+		data = JSON.parse(data);
+		if (data.event === 'stop'){
+			startToggle = true;
+			document.getElementById('start').disabled = false;
+		} else if (data.event === 'new_file'){
+			AM.appendImage(data);
+		} else if (data.event === 'export_progress'){
+			let progress = document.getElementById('progress');
+			if (data.progress >= data.complete){
+				progress.style.display = 'none';
+				document.getElementById('modal').style.display = 'none';
+			} else {
+				progress.dataset.progress = `'${data.progress}/${data.complete} frames complete`;
+				progress.style.width = (data.progress/data.complete*522) + 'px';
+			}
+		}
 	});
 
     ipc.on('start', () => {

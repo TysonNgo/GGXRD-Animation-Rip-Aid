@@ -85,6 +85,8 @@ def main():
                     conn.send(json.dumps({'event': 'stop'}))
                 elif data['event'] == 'export_gifs':
                     print 'received'
+                    progress = 0
+                    complete = sum([g['frame_end']+1-g['frame_start'] for g in data['gifs']])
                     for gif in data['gifs']:
                         out = os.path.join(ss_dir, char_dir, gif['filename'])
                         bbox = gif['bbox']
@@ -98,6 +100,12 @@ def main():
                                         int(bbox[0]*w):int(bbox[2]*w)])
                                 else:
                                     writer.append_data(im)
+                                progress += 1
+                                conn.send(json.dumps({
+                                    'event': 'export_progress',
+                                    'progress': progress,
+                                    'complete': complete
+                                }))
         except socket.error as err:
             if err[0] == 10054:
                 print 'Connected by', addr
