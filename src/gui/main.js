@@ -129,6 +129,11 @@
 					ci.scrollIntoViewIfNeeded();
 					ci.click();
 					cropItem.drawFrameCapture();
+				} else {
+					let carousel = document.getElementById('screenshot-carousel');
+					for (let i = 0; i < carousel.children.length; i++){
+						carousel.children[i].removeClass('frame-capture');
+					}
 				}
 				cropItem.drawCropBox();
 				cropItem.element.scrollIntoViewIfNeeded()
@@ -160,12 +165,20 @@
 				event: 'export_gifs',
 				gifs: []
 			};
+			let preview = document.getElementById('preview');
+			let w = preview.clientWidth;
+			let h = preview.clientHeight;
 			for (let i = 0; i < this.length; i++){
 				if (ci.frameStart !== null || ci.frameEnd !== null){
 					payload.gifs.push({
 						character: document.getElementById('character').value,
 						filename: ci.name + '.gif',
-						bbox: [ci.x1, ci.y1, ci.x2, ci.y2],
+						bbox: [
+							ci.x1 / preview.clientWidth,
+							ci.y1 / preview.clientHeight,
+							ci.x2 / preview.clientWidth,
+							ci.y2 / preview.clientHeight
+						],
 						frame_start: ci.frameStart,
 						frame_end: ci.frameEnd
 					})

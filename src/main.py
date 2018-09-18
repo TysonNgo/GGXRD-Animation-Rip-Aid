@@ -2,6 +2,7 @@ from compare2images import is_different
 from Screenshot import Screenshot
 from sys import argv
 import errno
+import imageio
 import json
 import numpy as np
 import os
@@ -85,7 +86,18 @@ def main():
                 elif data['event'] == 'export_gifs':
                     print 'received'
                     for gif in data['gifs']:
-                        print gif
+                        out = os.path.join(ss_dir, char_dir, gif['filename'])
+                        bbox = gif['bbox']
+                        with imageio.get_writer(out, mode='I', fps=60) as writer:
+                            for i in range(gif['frame_start'], gif['frame_end']+1):
+                                im = imageio.imread(os.path.join(ss_dir, char_dir, str(i)+'.png'))
+                                if all(gif['bbox']):
+                                    h, w, _ = im.shape
+                                    writer.append_data(im[
+                                        int(bbox[1]*h):int(bbox[3]*h),
+                                        int(bbox[0]*w):int(bbox[2]*w)])
+                                else:
+                                    writer.append_data(im)
         except socket.error as err:
             if err[0] == 10054:
                 print 'Connected by', addr
