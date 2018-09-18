@@ -67,6 +67,7 @@ def main():
         HOST, PORT = '', json.load(f)['port']
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((HOST, PORT))
+    print 'Listening on port ' + str(PORT)
     s.listen(1)
 
     conn, addr = s.accept()
@@ -87,7 +88,7 @@ def main():
                     print 'received'
                     progress = 0
                     complete = sum([g['frame_end']+1-g['frame_start'] for g in data['gifs']])
-                    for gif in data['gifs']:
+                    for n, gif in enumerate(data['gifs']):
                         out = os.path.join(ss_dir, char_dir, gif['filename'])
                         bbox = gif['bbox']
                         with imageio.get_writer(out, mode='I', fps=60) as writer:
@@ -104,7 +105,12 @@ def main():
                                 conn.send(json.dumps({
                                     'event': 'export_progress',
                                     'progress': progress,
-                                    'complete': complete
+                                    'complete': complete,
+                                    'message':
+                                    # n of N gifs | file.gif - 1/30 frames
+                                    str(n+1) + ' of ' + str(len(data['gifs'])) + ' gifs | ' +
+                                    gif['filename'] + ' - ' +
+                                    str(i) + '/' + str(gif['frame_end']) + 'frames'
                                 }))
         except socket.error as err:
             if err[0] == 10054:

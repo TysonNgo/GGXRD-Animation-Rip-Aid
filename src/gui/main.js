@@ -616,12 +616,13 @@
 			AM.appendImage(data);
 		} else if (data.event === 'export_progress'){
 			let progress = document.getElementById('progress');
+			progress.dataset.progress = data.message;
+			progress.style.width = (data.progress/data.complete*522) + 'px';
 			if (data.progress >= data.complete){
 				progress.style.display = 'none';
 				document.getElementById('modal').style.display = 'none';
-			} else {
-				progress.dataset.progress = `'${data.progress}/${data.complete} frames complete`;
-				progress.style.width = (data.progress/data.complete*522) + 'px';
+				progress.dataset.progress = '';
+				progress.style.width = 0;
 			}
 		}
 	});
