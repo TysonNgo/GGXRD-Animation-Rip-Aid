@@ -88,10 +88,10 @@
 		#screenshot-carousel .img{
 			display: inline-block;
 			background-color: #ddd;
-			opacity: 0.4;
+			opacity: 0.6;
 		}
 		#screenshot-carousel .img.carousel-img-active{
-			opacity: 0.8;
+			opacity: 1;
 		}
 		#screenshot-carousel .img:after{
 			content: attr(data-number);
@@ -120,10 +120,17 @@
 			z-index: 1;
 			outline: 4px solid red;
 		}
+		.frame-capture:after{
+			content: '';
+			background: green;
+			height: 100%;
+			width: 100%;
+			opacity: 0.5;
+		}
 	</style>
 </head>
 <body>
-<div id="crop-box"></div>
+<div id="crop-box" style="display: none"></div>
 <div id="screenshot-ui">
 	<label>Character
 		<input type=text id="character">
@@ -149,8 +156,7 @@
 		export GIFs</button>
 	</div>
 </div>
-<div id="preview">
-</div>
+<div id="preview" style="opacity: 1"></div>
 <script type="text/javascript">
 	const ipc = require('electron').ipcRenderer;
 	const net = require('net');
@@ -161,6 +167,37 @@
 	let startToggle = true;
 
 	ipc.send('ready');
+
+	HTMLElement.prototype.toggleClass = function (classname){
+		if (this.hasClass(classname)){
+			this.removeClass(classname);
+		} else {
+			this.addClass(classname);
+		}
+	}
+
+	HTMLElement.prototype.hasClass = function(className) {
+	  if (this.classList)
+	    return this.classList.contains(className)
+	  else
+	    return !!this.className.match(new RegExp('(\\s|^)' + className + '(\\s|$)'))
+	}
+
+	HTMLElement.prototype.addClass = function(className) {
+	  if (this.classList)
+	    this.classList.add(className)
+	  else if (!hasClass(this, className)) this.className += " " + className
+	}
+
+	HTMLElement.prototype.removeClass = function(className) {
+	  if (this.classList)
+	    this.classList.remove(className)
+	  else if (hasClass(this, className)) {
+	    var reg = new RegExp('(\\s|^)' + className + '(\\s|$)')
+	    this.className=this.className.replace(reg, ' ')
+	  }
+	}
+
 
 	class CropItem{
 		constructor(name, element, x1, y1, x2, y2){
@@ -196,12 +233,24 @@
 				cropBox.style.top = preview.offsetTop + this.y1 + 'px';
 				cropBox.style.width = this.x2 - this.x1 + 'px';
 				cropBox.style.height = this.y2 - this.y1 + 'px';
+				cropBox.style.display = 'block';
 			} else {
 				let cropBox = document.getElementById('crop-box');
 				cropBox.style.left = null;
 				cropBox.style.top = null;
 				cropBox.style.width = null;
 				cropBox.style.height = null;
+				cropBox.style.display = 'none';
+			}
+		}
+		drawFrameCapture(){
+			let carousel = document.getElementById('screenshot-carousel');
+			for (let i = 0; i < carousel.children.length; i++){
+				if (i >= this.frameStart && i <= this.frameEnd){
+					carousel.children[i].addClass('frame-capture');
+				} else {
+					carousel.children[i].removeClass('frame-capture');
+				}
 			}
 		}
 	}
@@ -235,6 +284,7 @@
 					let ci = carousel.children[cropItem.frameStart]
 					ci.scrollIntoViewIfNeeded();
 					ci.click();
+					cropItem.drawFrameCapture();
 				}
 				cropItem.drawCropBox();
 				cropItem.element.scrollIntoViewIfNeeded()
@@ -278,7 +328,6 @@
 				}
 				ci = ci.next;
 			}
-			console.log(payload)
 			client.write(payload);
 		}
 		remove(cropItem){
@@ -402,42 +451,31 @@
 			if (cropItem === null || !this.preview.style.backgroundImage) return;
 			let start = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
 			cropItem.frameStart = start;
-			if (cropItem.frameEnd < start || !cropItem.frameEnd){
+			if (cropItem.frameEnd < start || cropItem.frameEnd === null){
 				cropItem.frameEnd = start
 			}
-			this.highlightFrameRange()
+			cropItem.drawFrameCapture();
 		}
 		setEnd(){
 			let cropItem = this.cropList.activeCropItem;
 			if (cropItem === null || !this.preview.style.backgroundImage) return;
 			let end = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
 			cropItem.frameEnd = end;
-			if (cropItem.frameStart > end || !cropItem.frameStart){
+			if (cropItem.frameStart > end || cropItem.frameStart === null){
 				cropItem.frameStart = end
 			}
-			this.highlightFrameRange()
-		}
-		highlightFrameRange(){
-			let imgs = this.carousel.children;
-			for (let i = 0; i < imgs.length; i++){
-				let start = this.cropList.activeCropItem.frameStart;
-				let end = this.cropList.activeCropItem.frameEnd;
-				if (i >= start && i < end){
-					imgs[i].style.backgroundColor = 'red';
-				} else {
-					imgs[i].style.backgroundColor = 'black';
-				}
-			}
+			cropItem.drawFrameCapture();
 		}
 		setPreview(img){
 			let file = img.style.backgroundImage;
 			this.preview.style.backgroundImage = file;
+			this.preview.dataset.number = img.dataset.number;
 		}
 		appendImage(data){
 			let img = document.createElement('div');
 
 			img.dataset.number = /(\d+\.png)$/i.exec(data.file)[1];
-			img.className = 'img';
+			img.addClass('img');
 			img.style.backgroundSize = 'cover';
 			img.style.width = data.width * 0.05 + 'px';
 			img.style.height = data.height * 0.05 + 'px';
@@ -456,15 +494,16 @@
 			img.style.cursor = 'pointer';
 			img.onclick = e => {
 				this.setPreview(e.target);
-				this.activeCarouselItem.className = 'img';
-				img.className = 'img carousel-img-active';
+				this.activeCarouselItem.removeClass('carousel-img-active');
+				img.addClass('carousel-img-active');
+				img.scrollIntoViewIfNeeded();
 				this.activeCarouselItem = img;
 			};
 
 			if (this.activeCarouselItem){
-				this.activeCarouselItem.className = 'img';
+				this.activeCarouselItem.removeClass('carousel-img-active');
 			}
-			img.className = 'img carousel-img-active';
+			img.addClass('carousel-img-active');
 			this.activeCarouselItem = img;
 
 			this.setPreview(img);
@@ -487,6 +526,8 @@
 				this.carousel.children[0].remove();
 			}
 			this.activeCarouselItem = null;
+			document.getElementById('crop-box').style = null;
+			document.getElementById('crop-box').style.display = 'none';
 		}
 	}
 	let AM = new AnimationManager();
@@ -572,6 +613,7 @@
 					cropBox.style.top = preview.offsetTop + coords.y0 + 'px';
 					cropBox.style.height = 0;
 					cropBox.style.width = 0;
+					cropBox.style.display = 'block';
 				}
 			}
 		}
@@ -595,12 +637,15 @@
 	document.getElementById('export-gifs').onclick = () => AM.cropList.export(client);
 
 	// keyboard shortcuts
+	let frameSetHeld = false;
 	document.body.onkeydown = e => {
 		let ssCrops = document.getElementsByClassName('screenshot-crops-container')[0];
 		let ssCarousel = document.getElementById('screenshot-carousel');
 		if (mouseWithinElement(ssCrops) || mouseWithinElement(ssCarousel)){
 			return;
 		}
+		let frame = /\d+/.exec(AM.preview.dataset.number);
+		if (frame) frame = Number(frame[0]);
 		console.log(e.which, e.code)
 		switch (e.which){
 			case 38: // UP
@@ -610,10 +655,45 @@
 				AM.cropList.activeCropItemNext();
 				break;
 			case 37: // LEFT
+				if (frame === null) break;
+				for (let i = 0; i < ssCarousel.children.length; i++){
+					if (i === frame-1){
+						ssCarousel.children[i].click();
+					}
+				}
+				break;
 			case 39: // RIGHT
+				if (frame === null) break;
+				for (let i = 0; i < ssCarousel.children.length; i++){
+					if (i === frame+1){
+						ssCarousel.children[i].click();
+					}
+				}
+				break;
+			case 32: // SPACE
+				cropSelect();
+				break;
 			//e.preventDefault();
 		}
+		if (e.ctrlKey && (e.which === 17 || e.which === 37 || e.which === 39)){ // 17 - CTRL
+				console.log(AM.cropList.activeCropItem)
+			if (!frameSetHeld){
+				AM.setStart();
+				AM.setEnd();
+				frameSetHeld = true;	
+			} else {
+				if (e.which === 37) AM.setStart();
+				if (e.which === 39) AM.setEnd();
+			}
+		}
 	}
+
+	document.body.onkeyup = e => {
+		if (frameSetHeld && e.which === 17){
+			frameSetHeld = false;
+		}
+	}
+
 
 	client.on('end', () => {
 		console.log('disconnected from server');
