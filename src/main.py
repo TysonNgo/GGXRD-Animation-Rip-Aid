@@ -82,6 +82,10 @@ def main():
                     char_dir = data['character']
                     take_screenshots(conn)
                     conn.send(json.dumps({'event': 'stop'}))
+                elif data['event'] == 'export_gifs':
+                    print 'received'
+                    for gif in data['gifs']:
+                        print gif
         except socket.error as err:
             if err[0] == 10054:
                 print 'Connected by', addr

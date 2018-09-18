@@ -87,6 +87,11 @@
 		}
 		#screenshot-carousel .img{
 			display: inline-block;
+			background-color: #ddd;
+			opacity: 0.4;
+		}
+		#screenshot-carousel .img.carousel-img-active{
+			opacity: 0.8;
 		}
 		#screenshot-carousel .img:after{
 			content: attr(data-number);
@@ -110,9 +115,15 @@
 			float: right;
 			margin-right: 3px;
 		}
+		#crop-box{
+			position:fixed;
+			z-index: 1;
+			outline: 4px solid red;
+		}
 	</style>
 </head>
 <body>
+<div id="crop-box"></div>
 <div id="screenshot-ui">
 	<label>Character
 		<input type=text id="character">
@@ -132,9 +143,9 @@
 	<div id="screenshot-carousel"></div>
 	<div class="screenshot-crop-buttons">
 		<button id="first-frame" title="first frame to animate for the selected move">
-		first frame</button><button title="area to crop for the selected move">
+		first frame</button><button id="crop" title="area to crop for the selected move">
 		crop</button><button id="last-frame" title="last frame to animate for the selected move">
-		last frame</button><button style="width: 40%" title="export all moves to GIFs">
+		last frame</button><button style="width: 40%" id="export-gifs" title="export all moves to GIFs">
 		export GIFs</button>
 	</div>
 </div>
@@ -151,14 +162,167 @@
 
 	ipc.send('ready');
 
+	class CropItem{
+		constructor(name, element, x1, y1, x2, y2){
+			this.prev = null;
+			this.next = null;
+			this.name = name;
+			this.x1 = x1 || null;
+			this.y1 = y1 || null;
+			this.x2 = x2 || null;
+			this.y2 = y2 || null;
+			this.frameStart = null;
+			this.frameEnd = null;
+			this.element = element;
+		}
+		setXY(x1, y1, x2, y2){
+			let x = [x1, x2]
+			let y = [y1, y2]
+			this.x1 = Math.min(...x);
+			this.y1 = Math.min(...y);
+			this.x2 = Math.max(...x);
+			this.y2 = Math.max(...y);
+			this.drawCropBox();
+		}
+		drawCropBox(){
+			if (this.x1 !== null || 
+				this.y1 !== null ||
+				this.x2 !== null ||
+				this.y2 !== null
+				){
+				let cropBox = document.getElementById('crop-box');
+				let preview = document.getElementById('preview');
+				cropBox.style.left = preview.offsetLeft + this.x1 + 'px';
+				cropBox.style.top = preview.offsetTop + this.y1 + 'px';
+				cropBox.style.width = this.x2 - this.x1 + 'px';
+				cropBox.style.height = this.y2 - this.y1 + 'px';
+			} else {
+				let cropBox = document.getElementById('crop-box');
+				cropBox.style.left = null;
+				cropBox.style.top = null;
+				cropBox.style.width = null;
+				cropBox.style.height = null;
+			}
+		}
+	}
+
+	class CropList{
+		constructor(){
+			this.first = null;
+			this.last = null;
+			this.length = 0;
+			this.__activeCropItem = null;
+		}
+		push(cropItem){
+			if (this.length === 0){
+				this.first = cropItem;
+				this.last = cropItem;
+			} else{
+				cropItem.prev = this.last;
+				this.last.next = cropItem;
+				this.last = cropItem;
+			}
+			this.length++;
+		}
+		set activeCropItem(cropItem){
+			if (this.__activeCropItem){
+				this.__activeCropItem.element.style.background = 'none';
+			}
+			if (cropItem){
+				cropItem.element.style.background = '#c9c9c9';
+				if (cropItem.frameStart !== null){
+					let carousel = document.getElementById('screenshot-carousel')
+					let ci = carousel.children[cropItem.frameStart]
+					ci.scrollIntoViewIfNeeded();
+					ci.click();
+				}
+				cropItem.drawCropBox();
+				cropItem.element.scrollIntoViewIfNeeded()
+			}
+			this.__activeCropItem = cropItem;
+		}
+		get activeCropItem(){
+			return this.__activeCropItem;
+		}
+		activeCropItemPrevious(){
+			if (this.length <= 1) return;
+			if (this.activeCropItem === this.first){
+				this.activeCropItem = this.last;
+			} else {
+				this.activeCropItem = this.activeCropItem.prev;	
+			}
+		}
+		activeCropItemNext(){
+			if (this.length <= 1) return;
+			if (this.activeCropItem === this.last){
+				this.activeCropItem = this.first;
+			} else {
+				this.activeCropItem = this.activeCropItem.next;	
+			}
+		}
+		export(client){
+			let ci = this.first;
+			let payload = {
+				event: 'export_gifs',
+				gifs: []
+			};
+			for (let i = 0; i < this.length; i++){
+				if (ci.frameStart !== null || ci.frameEnd !== null){
+					payload.gifs.push({
+						character: document.getElementById('character').value,
+						filename: ci.name + '.gif',
+						bbox: [ci.x1, ci.y1, ci.x2, ci.y2],
+						frame_start: ci.frameStart,
+						frame_end: ci.frameEnd
+					})
+				}
+				ci = ci.next;
+			}
+			console.log(payload)
+			client.write(payload);
+		}
+		remove(cropItem){
+			if (this.length === 0) return;
+			let cIPrev = cropItem.prev;
+			let cINext = cropItem.next;
+
+			if (cIPrev && cINext){
+				cIPrev.next = cINext;
+				cINext.prev = cIPrev;
+				if (cropItem === this.activeCropItem){
+					this.activeCropItem = cIPrev;
+				}
+			} else if (!cIPrev && cINext){
+				this.first = cINext;
+				cINext.prev = null;
+				if (cropItem === this.activeCropItem){
+					this.activeCropItem = cINext;
+				}
+			} else if (!cINext && cIPrev){
+				this.last = cIPrev;
+				cIPrev.next = null;
+				if (cropItem === this.activeCropItem){
+					this.activeCropItem = cIPrev;
+				}
+			} else {
+				this.activeCropItem = null;
+				this.first = null;
+				this.last = null;
+			}
+
+			cropItem.element.remove();
+			this.length--;
+		}
+	}
+
 	class AnimationManager{
 		constructor(){
 			this.crops = document.getElementById('screenshot-crops');
 			this.carousel = document.getElementById('screenshot-carousel');
 			this.preview = document.getElementById('preview');
-			this.cropList = [];
+			this.cropList = new CropList();
 			this.createCropList();
-			this.activeCropItem = null;
+			this.activeCarouselItem = null;
 		}
 		createCropList(){
 			let moves = [
@@ -201,6 +365,7 @@
 				let cropItem = this.createCropItem(moves[i]);
 				this.cropList.push(cropItem);
 			}
+			this.cropList.activeCropItem = this.cropList.first;
 		}
 		createCropItem(name, x1, y1, x2, y2){
 			let tr = document.createElement('tr');
@@ -217,49 +382,51 @@
 			tr.appendChild(remove);
 
 			this.crops.appendChild(tr);
-			let cropItem = {
-				name: name,
-				x1: x1 || null,
-				y1: y1 || null,
-				x2: x2 || null,
-				y2: y2 || null,
-				frameStart: null,
-				frameEnd: null,
-				element: tr
-			};
+			let cropItem = new CropItem(name, tr);
 
 			removeButton.onclick = () => {
-				console.log(this.activeCropItem)
-				// TODO
-				// change this.cropList to a linked list
-				cropItem.element.remove();
+				this.cropList.remove(cropItem);
+				let ci = this.cropList.first;
+				for (let i = 0; i < this.cropList.length; i++){
+					ci = ci.next;
+				}
 			};
 			move.onclick = () => {
-				for (let i = 0; i < this.cropList.length; i++){
-					this.cropList[i].element.style.background = 'none';
-				}
-				cropItem.element.style.background = '#c9c9c9';
-				this.activeCropItem = cropItem;
+				this.cropList.activeCropItem = cropItem;
 			}
 
 			return cropItem;
 		}
 		setStart(){
-			let cropItem = this.activeCropItem;
+			let cropItem = this.cropList.activeCropItem;
 			if (cropItem === null || !this.preview.style.backgroundImage) return;
 			let start = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
 			cropItem.frameStart = start;
-			if (cropItem.frameEnd < start){
+			if (cropItem.frameEnd < start || !cropItem.frameEnd){
 				cropItem.frameEnd = start
 			}
+			this.highlightFrameRange()
 		}
 		setEnd(){
-			let cropItem = this.activeCropItem;
+			let cropItem = this.cropList.activeCropItem;
 			if (cropItem === null || !this.preview.style.backgroundImage) return;
 			let end = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
 			cropItem.frameEnd = end;
-			if (cropItem.frameStart > end){
+			if (cropItem.frameStart > end || !cropItem.frameStart){
 				cropItem.frameStart = end
+			}
+			this.highlightFrameRange()
+		}
+		highlightFrameRange(){
+			let imgs = this.carousel.children;
+			for (let i = 0; i < imgs.length; i++){
+				let start = this.cropList.activeCropItem.frameStart;
+				let end = this.cropList.activeCropItem.frameEnd;
+				if (i >= start && i < end){
+					imgs[i].style.backgroundColor = 'red';
+				} else {
+					imgs[i].style.backgroundColor = 'black';
+				}
 			}
 		}
 		setPreview(img){
@@ -289,15 +456,37 @@
 			img.style.cursor = 'pointer';
 			img.onclick = e => {
 				this.setPreview(e.target);
+				this.activeCarouselItem.className = 'img';
+				img.className = 'img carousel-img-active';
+				this.activeCarouselItem = img;
 			};
+
+			if (this.activeCarouselItem){
+				this.activeCarouselItem.className = 'img';
+			}
+			img.className = 'img carousel-img-active';
+			this.activeCarouselItem = img;
 
 			this.setPreview(img);
 			this.carousel.appendChild(img);
 			this.carousel.scrollTo(
 				this.carousel.scrollWidth - this.carousel.clientWidth, 0);
 		}
-		clearCarousel(){
-			this.carousel.innerHTML = '';
+		clear(){
+			let cl = this.cropList.first;
+			for (let i = 0; i < this.cropList.length; i++){
+				cl.x1 = null;
+				cl.y1 = null;
+				cl.x2 = null;
+				cl.y2 = null;
+				cl.frameStart = null;
+				cl.frameEnd = null;
+				cl = cl.next;
+			}
+			while (this.carousel.children.length){
+				this.carousel.children[0].remove();
+			}
+			this.activeCarouselItem = null;
 		}
 	}
 	let AM = new AnimationManager();
@@ -322,8 +511,8 @@
 	})(client.write);
 
 	function start(e){
-		AM.clearCarousel();
 		if (startToggle){
+			AM.clear();
 			startToggle = false;
 			e.target.disabled = true;
 			client.write({
@@ -333,6 +522,67 @@
 		}
 	};
 
+	let currX;
+	let currY;
+	function mouseWithinElement(element){
+		let {x, right, y, bottom} = element.getBoundingClientRect()
+		return (currX >= x && currX <= right) && (currY >= y && currY <= bottom);
+	}
+	document.onmousemove = e => {
+		currX = e.clientX;
+		currY = e.clientY;
+	}
+	document.onclick = (function(){
+		let clicks = 0;
+		let coords = {
+			x0: null,
+			x1: null,
+			y0: null,
+			y1: null
+		};
+		return e => {
+			if (mouseWithinElement(AM.preview) && AM.preview.style.opacity < 1){
+				switch(clicks){
+					case 0:
+					case 1:
+						coords['x'+clicks] = e.clientX - AM.preview.offsetLeft
+						coords['y'+clicks] = e.clientY - AM.preview.offsetTop
+						clicks++;
+				}
+				if (clicks > 1){
+					let ci = AM.cropList.activeCropItem;
+					if (ci){
+						ci.setXY(
+							coords.x0,
+							coords.y0,
+							coords.x1,
+							coords.y1
+						);
+					}
+					clicks = 0;
+					coords.x0 = null;
+					coords.y0 = null;
+					coords.x1 = null;
+					coords.y1 = null;
+					AM.preview.style.opacity = 1;
+				} else {
+					let cropBox = document.getElementById('crop-box');
+					let preview = document.getElementById('preview');
+					cropBox.style.left = preview.offsetLeft + coords.x0 + 'px';
+					cropBox.style.top = preview.offsetTop + coords.y0 + 'px';
+					cropBox.style.height = 0;
+					cropBox.style.width = 0;
+				}
+			}
+		}
+	})()
+
+	function cropSelect(e){
+		if (AM.cropList.activeCropItem){
+			AM.preview.style.opacity = 0.4;	
+		}
+	}
+
 	function horizontalScroll(e){
 		e.target.scrollLeft += e.deltaY;
 		e.preventDefault();
@@ -340,7 +590,30 @@
 	document.getElementById('screenshot-carousel').onwheel = horizontalScroll;
 	document.getElementById('start').onclick = start;
 	document.getElementById('first-frame').onclick = () => AM.setStart();
+	document.getElementById('crop').onclick = cropSelect;
 	document.getElementById('last-frame').onclick = () => AM.setEnd();
+	document.getElementById('export-gifs').onclick = () => AM.cropList.export(client);
+
+	// keyboard shortcuts
+	document.body.onkeydown = e => {
+		let ssCrops = document.getElementsByClassName('screenshot-crops-container')[0];
+		let ssCarousel = document.getElementById('screenshot-carousel');
+		if (mouseWithinElement(ssCrops) || mouseWithinElement(ssCarousel)){
+			return;
+		}
+		console.log(e.which, e.code)
+		switch (e.which){
+			case 38: // UP
+				AM.cropList.activeCropItemPrevious();
+				break;
+			case 40: // DOWN
+				AM.cropList.activeCropItemNext();
+				break;
+			case 37: // LEFT
+			case 39: // RIGHT
+			//e.preventDefault();
+		}
+	}
 
 	client.on('end', () => {
 		console.log('disconnected from server');
@@ -352,6 +625,8 @@
     	}
     	start(e);
     });
+
+    document.getElementById('character').focus();
 </script>
 </body>
 </html>
