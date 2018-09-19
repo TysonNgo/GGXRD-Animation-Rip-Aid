@@ -39,8 +39,19 @@ hotkeys = {
 
   createHotkey(defaultZoom, VK_NUMPAD2),
   createHotkey(panToP1, VK_NUMPAD1),
-  createHotkey(panToP2, VK_NUMPAD3)
+  createHotkey(panToP2, VK_NUMPAD3),
+
+  createHotkey(speedtoggle, VK_SUBTRACT)
 }
+
+function speedtoggle()
+  local speed = speedhack_getSpeed()
+  if speed < 1 then
+    speedhack_setSpeed(1)
+  else
+    speedhack_setSpeed(0.1)
+  end
+end
 
 function getPtrAddress(mRecord)
   r = mRecord.getAddress()
