@@ -305,7 +305,7 @@ class AnimationManager{
 	setStart(){
 		let cropItem = this.cropList.activeCropItem;
 		if (cropItem === null || !this.preview.style.backgroundImage) return;
-		let start = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
+		let start = Number(/(\d+)\.png\?\d+"\)/.exec(this.preview.style.backgroundImage)[1]);
 		cropItem.frameStart = start;
 		if (cropItem.frameEnd < start || cropItem.frameEnd === null){
 			cropItem.frameEnd = start
@@ -315,7 +315,7 @@ class AnimationManager{
 	setEnd(){
 		let cropItem = this.cropList.activeCropItem;
 		if (cropItem === null || !this.preview.style.backgroundImage) return;
-		let end = Number(/(\d+)\.png"\)$/.exec(this.preview.style.backgroundImage)[1]);
+		let end = Number(/(\d+)\.png\?\d+"\)/.exec(this.preview.style.backgroundImage)[1]);
 		cropItem.frameEnd = end;
 		if (cropItem.frameStart > end || cropItem.frameStart === null){
 			cropItem.frameStart = end
@@ -330,13 +330,13 @@ class AnimationManager{
 	appendImage(data){
 		let img = document.createElement('div');
 
-		img.dataset.number = /(\d+\.png)$/i.exec(data.file)[1];
+		img.dataset.number = /(\d+\.png)/i.exec(data.file)[1];
 		img.addClass('img');
 		img.style.backgroundSize = 'cover';
 		img.style.width = data.width * 0.05 + 'px';
 		img.style.height = data.height * 0.05 + 'px';
 
-		data.file = `url('${data.file.replace(/\\/g, '/')}')`;
+		data.file = `url('${data.file.replace(/\\/g, '/')}?${+new Date()}')`;
 		img.style.backgroundColor = 'black';
 		img.style.backgroundImage = data.file;
 		img.onwheel = e => {
