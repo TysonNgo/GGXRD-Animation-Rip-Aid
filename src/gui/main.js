@@ -4,7 +4,6 @@ const net = require('net');
 const config = require('../../config');
 const client = net.createConnection({ port: config.port }, () => {
 	console.log('connected to server!');
-});
 
 loop.loop();
 
@@ -635,4 +634,7 @@ ipc.on('start', () => {
 		target: document.getElementById('start')
 	}
 	start(e);
+});
+
+
 });
