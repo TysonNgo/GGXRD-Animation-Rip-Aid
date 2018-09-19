@@ -5,7 +5,7 @@ Tool to assist in taking frame-by-frame screenshots from Guilty Gear Xrd
 
 - OpenCV 3.4.2
 - Python 2.7
-- OS: Windows 10 (Uses win32api for takine screenshots, so it will not work in any other operating system)
+- OS: Windows 10 (Uses win32api for taking screenshots, so it will not work in any other operating system)
 - Cheat Engine 6.7 (This is just the version I was using, any version may work)
 
 # Setup
