@@ -19,6 +19,24 @@ cp "PATH\TO\opencv\build\python\2.7\x86\cv2.pyd" "venv\Lib\site-packages\cv2.pyd
 npm start
 ```
 
+Here is a useful script to use on [Dustloop character pages](http://www.dustloop.com/wiki/index.php/GGXRD-R2/Sol_Badguy) to keep track of moves already ripped. This script will isolate the pictures of the moves, as well as allow the user to remove the images by clicking the container they belong to.
+
+```js
+javascript:(function(){
+  document.getElementById('content').style.margin = 0;
+  document.querySelectorAll('tr').forEach(e => {e.children[1] ? e.children[1].outerHTML = '' : ''}); 
+  document.querySelectorAll('table').forEach(e => {
+    e.style.width = 'auto';
+    e.style.display = 'inline-block';
+    e.onclick = ev => {
+      ev.target.remove();
+    };
+  });
+  document.querySelectorAll('#mw-content-text > *:not(table)').forEach(e => e.remove());
+  document.getElementById('mw-navigation').remove();
+})()
+```
+
 # Concept
 
 - In Guilty Gear Xrd, turn off the HUD for the health bars and tension gauge through the .ini files, go to training mode and use Cheat Engine to change the stage to black, as well as manipulate the camera when necessary, and slow down the game in order to make it easier to capture frame by frame. 
