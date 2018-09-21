@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
 import win32con
 import win32gui
@@ -70,18 +70,24 @@ class Screenshot():
 
         return im
     # -------------------------------------------------------------------------------------------------------------------
+    def get_dummy_action_bbox(self, w, h, framesOnly=False):
+        """
+         rtype: tuple
+        """
+        width, height = 1368.0, 795.0
+        x1, y1 = (1030+(120*framesOnly))/width, 215/height
+        x2, y2 = 1285/width, 260/height
+        bbox = (int(x1*w), int(y1*h), int(x2*w), int(y2*h))
+
+        return bbox
 
     def crop_action_hud(self, im):
         """
+         im: np.array
          rtype: np.array
         """
-        w, h = 1368.0, 795.0
-        # x1, y1 = 1030/w, 215/h
-        x1, y1 = 1150/w, 215/h
-        x2, y2 = 1285/w, 260/h
         h, w = im.shape[:2]
-        bbox = (int(x1*w), int(y1*h), int(x2*w), int(y2*h))
-
+        bbox = self.get_dummy_action_bbox(w, h, framesOnly=True)
         return self.__imcrop(im, bbox)
 
     def get_info(self):
@@ -103,4 +109,7 @@ class Screenshot():
                 'RGB',
                 (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
                 bmpstr, 'raw', 'BGRX', 0, 1)
+            d = ImageDraw.Draw(im)
+            bbox = self.get_dummy_action_bbox(bmpinfo['bmWidth'], bmpinfo['bmHeight'])
+            d.rectangle(bbox, fill=0x000000)
             im.save(fn)
