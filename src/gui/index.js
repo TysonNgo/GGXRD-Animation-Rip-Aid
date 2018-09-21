@@ -8,7 +8,7 @@ const subprocess = spawn('python', ['src/main.py'], {
 });
 
 subprocess.stderr.on('data', (data) => {
-  console.log(data.toString());
+  console.error(data.toString());
   process.exit(1);
 })
 

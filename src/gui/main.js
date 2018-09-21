@@ -350,22 +350,15 @@ class AnimationManager{
 		img.style.cursor = 'pointer';
 		img.onclick = e => {
 			this.setPreview(e.target);
-			this.activeCarouselItem.removeClass('carousel-img-active');
+			if (this.activeCarouselItem){
+				this.activeCarouselItem.removeClass('carousel-img-active');
+			}
 			img.addClass('carousel-img-active');
 			img.scrollIntoViewIfNeeded();
 			this.activeCarouselItem = img;
 		};
 
-		if (this.activeCarouselItem){
-			this.activeCarouselItem.removeClass('carousel-img-active');
-		}
-		img.addClass('carousel-img-active');
-		this.activeCarouselItem = img;
-
-		this.setPreview(img);
 		this.carousel.appendChild(img);
-		this.carousel.scrollTo(
-			this.carousel.scrollWidth - this.carousel.clientWidth, 0);
 	}
 	clear(){
 		let cl = this.cropList.first;
@@ -467,11 +460,26 @@ function horizontalScroll(e){
 	e.preventDefault();
 };
 document.getElementById('screenshot-carousel').onwheel = horizontalScroll;
-document.getElementById('start').onclick = start;
-document.getElementById('first-frame').onclick = () => AM.setStart();
-document.getElementById('crop').onclick = cropSelect;
-document.getElementById('last-frame').onclick = () => AM.setEnd();
-document.getElementById('export-gifs').onclick = () => AM.cropList.export(client);
+document.getElementById('start').onclick = e => {
+	e.target.blur();
+	start();
+}
+document.getElementById('first-frame').onclick = e => {
+	e.target.blur();
+	AM.setStart();
+}
+document.getElementById('crop').onclick = e => {
+	e.target.blur();
+	cropSelect();
+};
+document.getElementById('last-frame').onclick = e => {
+	e.target.blur();
+	AM.setEnd();
+}
+document.getElementById('export-gifs').onclick = e => {
+	e.target.blur();
+	AM.cropList.export(client);
+}
 document.getElementById('add-crop-button').onclick = () => {
 	document.getElementById('modal').style.display = 'block';
 	document.getElementById('menu').style.display = 'block';
@@ -626,6 +634,8 @@ client.on('data', (data) => {
 			progress.dataset.progress = '';
 			progress.style.width = 0;
 		}
+	} else if (data.event === 'error'){
+		console.error(data.error);
 	}
 });
 
