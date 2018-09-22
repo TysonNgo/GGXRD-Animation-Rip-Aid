@@ -117,7 +117,7 @@ def main():
                 data = json.loads(data)
                 if data['event'] == 'start':
                     print 'capturing screenshots'
-                    char_dir = data['character']
+                    char_dir = data['character'].strip()
                     take_screenshots(conn)
                     conn.send(json.dumps({'event': 'stop'}))
                 elif data['event'] == 'export_gifs':
