@@ -1,6 +1,6 @@
 from compare2images import is_different
 from Screenshot import Screenshot
-from sys import argv
+from sys import argv, stdout
 import errno
 import imageio
 import json
@@ -103,6 +103,7 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((HOST, PORT))
     print 'Listening on port ' + str(PORT)
+    stdout.flush()
     s.listen(1)
 
     conn, addr = s.accept()

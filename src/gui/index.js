@@ -7,7 +7,12 @@ const subprocess = spawn('python', ['src/main.py'], {
   detached: false
 });
 
-subprocess.stderr.on('data', (data) => {
+subprocess.stdout.once('data', data => {
+  console.log(data.toString());
+  createWindow();
+})
+
+subprocess.stderr.on('data', data => {
   console.error(data.toString());
   process.exit(1);
 })
@@ -35,7 +40,7 @@ function createWindow () {
   })
 }
 
-app.on('ready', createWindow)
+//app.on('ready', createWindow)
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') {
