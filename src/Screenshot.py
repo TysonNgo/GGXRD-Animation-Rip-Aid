@@ -70,6 +70,7 @@ class Screenshot():
 
         return im
     # -------------------------------------------------------------------------------------------------------------------
+
     def get_dummy_action_bbox(self, w, h, framesOnly=False):
         """
          rtype: tuple

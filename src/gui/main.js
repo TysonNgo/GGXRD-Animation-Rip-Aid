@@ -462,7 +462,7 @@ function horizontalScroll(e){
 document.getElementById('screenshot-carousel').onwheel = horizontalScroll;
 document.getElementById('start').onclick = e => {
 	e.target.blur();
-	start();
+	start(e);
 }
 document.getElementById('first-frame').onclick = e => {
 	e.target.blur();
@@ -511,7 +511,7 @@ addEventListener('controllerInput', e => {
 		case 0b0000: stick.style.top = '24px'; stick.style.left = '24px'; break; // 5
 		case 0b0001: stick.style.top = '24px'; stick.style.left = '54px'; break; // 6
 		case 0b1010: stick.style.top = '-6px'; stick.style.left = '-6px'; break; // 7
-		case 0b1000: stick.style.top = '-6px'; stick.style.left = '24px'; console.log(1); break; // 8
+		case 0b1000: stick.style.top = '-6px'; stick.style.left = '24px'; break; // 8
 		case 0b1001: stick.style.top = '-6px'; stick.style.left = '54px'; break; // 9
 	}
 	for (let input in inputFlags){
@@ -540,7 +540,6 @@ document.body.onkeydown = e => {
 	}
 	let frame = /\d+/.exec(AM.preview.dataset.number);
 	if (frame) frame = Number(frame[0]);
-	console.log(e.which, e.code)
 	switch (e.which){
 		case 38: // UP
 			AM.cropList.activeCropItemPrevious();
@@ -613,7 +612,7 @@ client.write = (function(write){
 
 ipc.send('ready');
 
-client.on('end', () => {
+client.on('end', data => {
 	console.log('disconnected from server');
 });
 

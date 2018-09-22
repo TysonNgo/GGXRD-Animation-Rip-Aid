@@ -55,6 +55,7 @@ def take_screenshots(conn):
 
         prev = curr
 
+
 def export_gifs(conn, data):
     global ss_dir
     global char_dir
@@ -91,6 +92,25 @@ def export_gifs(conn, data):
                 'error': str(ex)
             }))
 
+
+def read_data(conn):
+    result = b''
+    while True:
+        try:
+            data = conn.recv(1024)
+            if not data:
+                break
+            result += data
+            return json.loads(result)
+        except ValueError:
+            # this error will occur when json.loads fails.
+            # the way this app is designed, there will either
+            # be no data, or there will be json data.
+            # in other words, when this block is reached
+            # then the json string has not been fully read
+            pass
+
+
 def main():
     global ss_dir
     global char_dir
@@ -110,19 +130,17 @@ def main():
     print 'Connected by', addr
     while True:
         try:
-            data = conn.recv(1024)
+            data = read_data(conn)
             if not data:
                 break
-            else:
-                data = json.loads(data)
-                if data['event'] == 'start':
-                    print 'capturing screenshots'
-                    char_dir = data['character'].strip()
-                    take_screenshots(conn)
-                    conn.send(json.dumps({'event': 'stop'}))
-                elif data['event'] == 'export_gifs':
-                    print 'received'
-                    export_gifs(conn, data)
+            if data['event'] == 'start':
+                print 'capturing screenshots'
+                char_dir = data['character'].strip()
+                take_screenshots(conn)
+                conn.send(json.dumps({'event': 'stop'}))
+            elif data['event'] == 'export_gifs':
+                print 'received'
+                export_gifs(conn, data)
         except socket.error as err:
             if err[0] == 10054:
                 print 'Connected by', addr

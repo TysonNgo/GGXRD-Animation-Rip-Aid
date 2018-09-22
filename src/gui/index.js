@@ -8,8 +8,11 @@ const subprocess = spawn('python', ['src/main.py'], {
 });
 
 subprocess.stdout.once('data', data => {
-  console.log(data.toString());
   createWindow();
+})
+
+subprocess.stdout.on('data', data => {  
+  console.log(data.toString());
 })
 
 subprocess.stderr.on('data', data => {
