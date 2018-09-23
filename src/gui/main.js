@@ -359,6 +359,16 @@ class AnimationManager{
 		};
 
 		this.carousel.appendChild(img);
+		Array.from(this.carousel.children).sort((a, b) => {
+			let nRe = /^\d+/
+			let aData = nRe.exec(a.dataset.number);
+			let bData = nRe.exec(b.dataset.number);
+			aData = aData ? Number(aData[0]) : 0;
+			bData = bData ? Number(bData[0]) : 0;
+			return aData < bData ? -1 : aData > bData ? 1 : 0;
+		}).forEach(i => {
+			this.carousel.append(i);
+		})
 	}
 	clear(){
 		let cl = this.cropList.first;
