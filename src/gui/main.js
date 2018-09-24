@@ -228,6 +228,12 @@ class AnimationManager{
 		this.cropList = new CropList();
 		this.createCropList();
 		this.activeCarouselItem = null;
+		this.cropboxStore = {
+			x1: null,
+			y1: null,
+			x2: null,
+			y2: null
+		};
 	}
 	createCropList(){
 		let moves = [
@@ -296,6 +302,12 @@ class AnimationManager{
 			}
 		};
 		move.onclick = () => {
+			let c = this.cropboxStore;
+			({x1, y1, x2, y2} = this.cropList.activeCropItem);
+			c.x1 = x1;
+			c.y1 = y1;
+			c.x2 = x2;
+			c.y2 = y2;
 			this.cropList.activeCropItem = cropItem;
 		}
 
@@ -412,6 +424,13 @@ function mouseWithinElement(element){
 document.onmousemove = e => {
 	currX = e.clientX;
 	currY = e.clientY;
+}
+document.oncontextmenu = e => {
+	if (mouseWithinElement(AM.preview)){
+		e.preventDefault();
+		({x1, y1, x2, y2} = AM.cropboxStore);
+		AM.cropList.activeCropItem.setXY(x1, y1, x2, y2);
+	}
 }
 document.onclick = (function(){
 	let clicks = 0;
