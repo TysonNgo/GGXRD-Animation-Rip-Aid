@@ -318,6 +318,10 @@ class M4264 extends Motion {
 }
 // special motions
 class M63214 extends Motion {
+    constructor(){
+        super();
+        this.is6214 = false;
+    }
     toString(){
         return '63214';
     }
@@ -330,24 +334,21 @@ class M63214 extends Motion {
             }
             break;
         case 1:
-            if (this.getDirBits(input) === 0b0101){
+            if (this.getDirBits(input) === 0b0101 || this.isDown(input)){
                 this.i++;
                 this.frameBuffer = this.frameBufferN;
             }
+            if (this.isDown(input)){
+                this.is6214 = true;
+            }
             break;
         case 2:
-            if (this.isDown(input)){
+            if ((this.is6214 && this.getDirBits(input) === 0b0110) || this.isDown(input)){
                 this.i++;
                 this.frameBuffer = this.frameBufferN;
             }
             break;
         case 3:
-            if (this.getDirBits(input) === 0b0110){
-                this.i++;
-                this.frameBuffer = this.frameBufferN;
-            }
-            break;
-        case 4:
             if (this.isLeft(input) && this.frameBuffer > 0){
                 this.canExecute = true;
             } else if (this.frameBuffer === 0){
@@ -360,6 +361,10 @@ class M63214 extends Motion {
     }
 }
 class M41236 extends Motion {
+    constructor(){
+        super();
+        this.is4236 = false;
+    }
     toString(){
         return '41236';
     }
@@ -372,24 +377,21 @@ class M41236 extends Motion {
             }
             break;
         case 1:
-            if (this.getDirBits(input) === 0b0110){
+            if (this.getDirBits(input) === 0b0110 || this.isDown(input)){
                 this.i++;
                 this.frameBuffer = this.frameBufferN;
             }
+            if (this.isDown(input)){
+                this.is4236 = true;
+            }
             break;
         case 2:
-            if (this.isDown(input)){
+            if ((this.is4236 && this.getDirBits(input) === 0b0101) || this.isDown(input)){
                 this.i++;
                 this.frameBuffer = this.frameBufferN;
             }
             break;
         case 3:
-            if (this.getDirBits(input) === 0b0101){
-                this.i++;
-                this.frameBuffer = this.frameBufferN;
-            }
-            break;
-        case 4:
             if (this.isRight(input) && this.frameBuffer > 0){
                 this.canExecute = true;
             } else if (this.frameBuffer === 0){
