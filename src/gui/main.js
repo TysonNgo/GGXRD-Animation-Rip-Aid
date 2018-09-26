@@ -2,6 +2,8 @@ const ipc = require('electron').ipcRenderer;
 const loop = require('./utils/loop');
 const net = require('net');
 const config = require('../../config');
+const path = require('path');
+const fs = require('fs');
 const client = net.createConnection({ port: config.port }, () => {
 	console.log('connected to server!');
 
@@ -340,6 +342,13 @@ class AnimationManager{
 		this.preview.dataset.number = img.dataset.number;
 	}
 	appendImage(data){
+		/*
+		data: {
+			file:
+			width:
+			height:
+		}
+		*/
 		let img = document.createElement('div');
 
 		img.dataset.number = /(\d+\.png)/i.exec(data.file)[1];
@@ -381,6 +390,59 @@ class AnimationManager{
 		}).forEach(i => {
 			this.carousel.append(i);
 		})
+	}
+	reloadImages(){
+		let char = document.getElementById('character').value;
+		let dir = path.join(__dirname, '..', '..', 'screenshots', char);
+		try{
+			if (!fs.statSync(dir).isDirectory()) return;
+		} catch (e){}
+
+		// get screenshot paths
+		let imgs = [];
+		let imgRe = /(\d+)\.png$/;
+		fs.readdirSync(dir).forEach(file => {
+			if (imgRe.test(file)){
+				imgs.push(file);
+			}
+		})
+		imgs.sort((a, b) => {
+			let aD = Number(imgRe.exec(a)[1]);
+			let bD = Number(imgRe.exec(b)[1]);
+			return aD < bD ? -1 : aD > bD ? 1 : 0;
+		})
+
+		// get width and height of screenshots
+		if (imgs.length === 0) return;
+		new Promise((resolve, reject) => {
+			let img = new Image();
+			img.onload = function(){
+				let {width, height} = this;
+				resolve({width: width, height: height});
+			}
+			img.src = `file:///${path.join(dir, imgs[0])}`;
+		})
+			.then(d => {
+				while (this.carousel.children.length){
+					this.carousel.children[0].remove();
+				}
+				this.activeCarouselItem = null;
+
+				let i = 0;
+				let interval = setInterval(() => {
+					if (i === imgs.length) clearInterval(interval);
+					else {
+						let f = path.join(dir, imgs[i]);
+						this.appendImage({
+							file: f,
+							width: d.width,
+							height: d.height
+						});
+					}
+					i++;
+				}, 1);
+			});
+
 	}
 	clear(){
 		let cl = this.cropList.first;
@@ -488,6 +550,9 @@ function horizontalScroll(e){
 	e.target.scrollLeft += e.deltaY;
 	e.preventDefault();
 };
+document.getElementById('screenshot-carousel').oncontextmenu = () => {
+	AM.reloadImages();
+}
 document.getElementById('screenshot-carousel').onwheel = horizontalScroll;
 document.getElementById('start').onclick = e => {
 	e.target.blur();
@@ -609,7 +674,6 @@ document.body.onkeydown = e => {
 		//e.preventDefault();
 	}
 	if (e.ctrlKey && (e.which === 17 || e.which === 37 || e.which === 39)){ // 17 - CTRL
-			console.log(AM.cropList.activeCropItem)
 		if (!frameSetHeld){
 			AM.setStart();
 			AM.setEnd();
