@@ -58,16 +58,15 @@ def take_screenshots(conn):
 
 def export_gifs(conn, data):
     global ss_dir
-    global char_dir
     progress = 0
     complete = sum([g['frame_end']+1-g['frame_start'] for g in data['gifs']])
     for n, gif in enumerate(data['gifs']):
-        out = os.path.join(ss_dir, char_dir, gif['filename'])
+        out = os.path.join(ss_dir, gif['character'], gif['filename'])
         bbox = gif['bbox']
         try:
             with imageio.get_writer(out, mode='I', fps=60) as writer:
                 for i in range(gif['frame_start'], gif['frame_end']+1):
-                    im = imageio.imread(os.path.join(ss_dir, char_dir, str(i)+'.png'))
+                    im = imageio.imread(os.path.join(ss_dir, gif['character'], str(i)+'.png'))
                     if all(gif['bbox']):
                         h, w, _ = im.shape
                         writer.append_data(im[
